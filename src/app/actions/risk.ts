@@ -10,8 +10,8 @@ import type { FormState } from "./payments";
 
 const review = z.object({
   id: z.string().min(1),
-  outcome: z.enum(["called", "false_flag"], { required_error: "Choose called or false flag" }),
-  note: z.string({ required_error: "Add a short note on what you found" }).trim().min(5, "Add a short note on what you found (5+ characters)").max(500),
+  outcome: z.enum(["called", "false_flag"], { error: "Choose called or false flag" }),
+  note: z.string({ error: "Add a short note on what you found" }).trim().min(5, "Add a short note on what you found (5+ characters)").max(500),
 });
 
 /**

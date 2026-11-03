@@ -14,7 +14,7 @@ import { loadStudent } from "@/server/queries";
 
 export type FormState = { ok?: string; error?: string; fields?: Record<string, string> } | null;
 
-const amount = z.coerce.number({ invalid_type_error: "Enter an amount" }).int("Whole rupees only").positive("Amount must be above zero").max(500000, "That is more than a full course fee");
+const amount = z.coerce.number({ error: "Enter an amount" }).int("Whole rupees only").positive("Amount must be above zero").max(500000, "That is more than a full course fee");
 const date = z.string().refine(isIsoDate, "Pick a valid date");
 
 const manual = z.object({
