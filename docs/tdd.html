@@ -41,6 +41,7 @@
   .diagram { width: 100%; margin: 4pt 0 10pt; }
   .small { font-size: 9pt; color: var(--ink2); }
   .avoid { break-inside: avoid; }
+  a { color: var(--indigo); }
 </style>
 </head>
 <body>
@@ -50,8 +51,8 @@
   <h1>Kosh</h1>
   <p style="font-size:12.5pt;color:var(--ink2);max-width:52ch">A fee ledger, parent portal and dues desk for Company A, Jaipur. Parents know what they owe without calling. Reminders send themselves and stop on payment. Accounts get one view of every centre.</p>
   <div class="links">
-    <b>GitHub</b><span class="todo">GITHUB_URL</span>
-    <b>Live app</b><span class="todo">LIVE_URL</span>
+    <b>GitHub</b><span><a href="https://github.com/amukta14/kosh">https://github.com/amukta14/kosh</a></span>
+    <b>Live app</b><span><a href="https://kosh-alpha.vercel.app">https://kosh-alpha.vercel.app</a> (Vercel + Turso, demo mode on)</span>
     <b>Run locally</b><span><code>npm install &amp;&amp; npm run setup &amp;&amp; npm run dev</code> (see deployment.md)</span>
     <b>Demo logins</b><span>Parent <span class="mono">98290 00587</span> (code shown on screen) · Accounts <span class="mono">neha@companya.test</span> · Counsellor <span class="mono">vikram@companya.test</span> · password <span class="mono">kosh-demo-2026</span></span>
   </div>
@@ -281,6 +282,7 @@
   <li>Ledgers are computed in memory per request. That is fine for thousands of students; at tens of thousands I would cache per-student balances and invalidate on payment.</li>
   <li>The refund policy wording is mine. The client's lawyer should sign it off before it is published.</li>
   <li>The demo clock and on-screen OTP exist only in demo mode and must be off (<code>DEMO_MODE=false</code>) for a real launch.</li>
+  <li>Dependencies are on patched releases (Next.js 15.5.28, drizzle-orm 0.45.4, zod 4.6.7). <code>npm audit</code> still lists postcss and sharp inside Next.js; the fix is Next.js 16. postcss only processes this project's own CSS at build time, and sharp (image resizing) is not used. I would move to Next.js 16 after submission rather than take a major upgrade under deadline.</li>
   <li>Hindi copy was written carefully but should be read by a native speaker at the client before parents see it.</li>
 </ul>
 </body>

@@ -7,7 +7,6 @@ import { decideReminders, renderReminder } from "@/domain/reminders";
 import { DEFAULT_DEMO_DATE, setToday } from "./clock";
 import { runRisk } from "./engine";
 import { payUrl } from "./paylink";
-import { recordPayment } from "./payments";
 
 // Deterministic PRNG so every reseed gives the same school.
 function rng(seed: number) {
@@ -240,12 +239,24 @@ export async function seedDatabase(today = DEFAULT_DEMO_DATE) {
   await chunk(testRows, (r) => db.insert(schema.testScores).values(r));
 
   allPayments.sort((a, b) => a.on.localeCompare(b.on));
+  // Payments are bulk-inserted with receipt numbers assigned here, so seeding a
+  // remote database takes seconds. Live payments go through recordPayment().
   const recorded: (Payment & { studentId: string })[] = [];
-  for (const p of allPayments) {
+  const payRows: (typeof schema.payments.$inferInsert)[] = [];
+  const createdAt = new Date().toISOString();
+  allPayments.forEach((p, i) => {
     const ref = p.method === "gateway" ? `pay_T${p.on.replace(/-/g, "")}${p.studentId.slice(4)}` : p.method === "upi" ? `UPI/${p.on.replace(/-/g, "").slice(2)}/${p.studentId}` : p.method === "neft" ? `NEFT FEE ${p.studentId}` : "Counter";
-    const r = await recordPayment({ studentId: p.studentId, amount: p.amount, receivedOn: p.on, method: p.method, reference: ref, recordedBy: p.method === "cash" ? "st-ramesh" : p.method === "gateway" ? "system:gateway" : rand() < 0.8 ? "system:matcher" : "st-neha" });
-    recorded.push({ id: r.id, amount: p.amount, receivedOn: p.on, studentId: p.studentId });
-  }
+    const id = `pay_s${String(i).padStart(4, "0")}`;
+    payRows.push({
+      id, studentId: p.studentId, amount: p.amount, receivedOn: p.on, method: p.method, reference: ref,
+      receiptNo: `CA/26-27/${String(i + 1).padStart(5, "0")}`, gatewayOrderId: null,
+      recordedBy: p.method === "cash" ? "st-ramesh" : p.method === "gateway" ? "system:gateway" : rand() < 0.8 ? "system:matcher" : "st-neha",
+      createdAt,
+    });
+    recorded.push({ id, amount: p.amount, receivedOn: p.on, studentId: p.studentId });
+  });
+  await chunk(payRows, (r) => db.insert(schema.payments).values(r));
+  await db.insert(schema.settings).values({ key: "receipt_seq_26-27", value: String(payRows.length) });
 
   // ---- Reminder history: replay the daily job for every day since the course began --
   const byStudentPays = new Map<string, Payment[]>();

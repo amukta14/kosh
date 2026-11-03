@@ -26,7 +26,7 @@ npm run build && npm start   # production build
 
 ## Demo logins
 
-The demo starts on **Monday 2 November 2026**, the date that matches the sample data in the brief (Ishita 23 days overdue, Mohit due in 13 days).
+Same logins locally and on https://kosh-alpha.vercel.app. The demo starts on **Monday 2 November 2026**, the date that matches the sample data in the brief (Ishita 23 days overdue, Mohit due in 13 days).
 
 | Role | Login | Notes |
 | --- | --- | --- |
@@ -54,22 +54,24 @@ These are demo accounts created by the seed script. They are not secrets and onl
 
 ## How it is deployed
 
-Target: **Vercel** for the app, **Turso** for the database. Both have free tiers that cover this demo.
+Live: **https://kosh-alpha.vercel.app** (repo: https://github.com/amukta14/kosh)
 
-1. Create a Turso database and a token:
+- **App:** Vercel project `kosh`, connected to the GitHub repo, so every push to `main` deploys.
+- **Database:** Turso, added through the Vercel Marketplace (Storage → Turso). The integration injects `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` into the project; the app reads those or `DATABASE_URL` / `DATABASE_AUTH_TOKEN`.
+- **Daily job:** `vercel.json` registers a cron at 03:00 UTC (08:30 IST) that calls `/api/cron/daily` to send reminders and refresh risk flags. Vercel sends `Authorization: Bearer $CRON_SECRET` automatically.
+
+To set up a copy from scratch:
+
+1. `vercel link`, then add the variables below with `vercel env add <NAME> production`.
+2. `vercel integration add turso` (or Storage → Turso in the dashboard) and connect it to the project.
+3. Load the schema and demo data into Turso from your machine:
    ```bash
-   turso db create kosh
-   turso db show kosh --url
-   turso db tokens create kosh
+   vercel env pull .env.vercel.production.local --environment=production
+   # then, with TURSO_DATABASE_URL, TURSO_AUTH_TOKEN, SESSION_SECRET and APP_URL exported:
+   npx tsx --conditions=react-server scripts/seed.ts
    ```
-2. Load the schema and demo data into it from your machine:
-   ```bash
-   DATABASE_URL=<libsql url> DATABASE_AUTH_TOKEN=<token> SESSION_SECRET=<same as Vercel> \
-     npx tsx --conditions=react-server scripts/seed.ts
-   ```
-   `SESSION_SECRET` must match production because pay links inside seeded reminder messages are signed with it.
-3. Import the GitHub repo in Vercel (framework preset: Next.js). Add the environment variables below. Deploy.
-4. `vercel.json` registers a daily cron (03:00 UTC, 08:30 IST) that calls `/api/cron/daily` to send reminders and refresh risk flags. Vercel sends `Authorization: Bearer $CRON_SECRET` automatically.
+   `SESSION_SECRET` and `APP_URL` must match production, because pay links inside the seeded reminder messages are signed with them. Seeding a remote database takes several minutes (one transaction per payment).
+4. `vercel deploy --prod`.
 
 Any Node host works the same way (`npm run build && npm start`). On a single server you can keep the SQLite file and set `DATABASE_URL=file:/data/kosh.db`.
 
@@ -79,8 +81,8 @@ Names only. `.env.example` lists them; `npm run setup` fills them locally.
 
 | Name | Required | Purpose |
 | --- | --- | --- |
-| `DATABASE_URL` | yes | `file:./local.db` locally, `libsql://...` for Turso |
-| `DATABASE_AUTH_TOKEN` | production | Turso token. Empty for a local file |
+| `DATABASE_URL` or `TURSO_DATABASE_URL` | yes | `file:./local.db` locally, `libsql://...` for Turso |
+| `DATABASE_AUTH_TOKEN` or `TURSO_AUTH_TOKEN` | production | Turso token. Empty for a local file |
 | `SESSION_SECRET` | yes | 32+ characters. Signs session cookies, pay links, receipt links and OTP hashes |
 | `GATEWAY_WEBHOOK_SECRET` | yes | 32+ characters. HMAC key for payment gateway callbacks |
 | `CRON_SECRET` | yes | 32+ characters. Protects `/api/cron/daily` |

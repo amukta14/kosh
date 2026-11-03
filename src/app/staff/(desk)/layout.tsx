@@ -12,6 +12,9 @@ import { loadStudents } from "@/server/queries";
 import { MobileNav } from "../_c/mobile-nav";
 import { Nav, type NavItem } from "../_c/nav";
 
+// Demo reset reseeds the database; give it room on serverless.
+export const maxDuration = 60;
+
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default async function DeskLayout({ children }: { children: React.ReactNode }) {
