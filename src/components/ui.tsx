@@ -56,7 +56,7 @@ export function Card({ className, ...p }: ComponentProps<"div">) {
 
 export function SectionTitle({ children, aside, id }: { children: ReactNode; aside?: ReactNode; id?: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 mb-3" id={id}>
+    <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 mb-3" id={id}>
       <h2 className="display text-[19px] font-medium">{children}</h2>
       {aside && <div className="text-sm text-ink-3">{aside}</div>}
     </div>

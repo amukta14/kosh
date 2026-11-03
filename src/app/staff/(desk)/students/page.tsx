@@ -76,7 +76,25 @@ export default async function Students({ searchParams }: { searchParams: Promise
         {rows.length === 0 ? (
           <Empty title="No students match" action={<ButtonLink href="/staff/students" tone="secondary" size="sm">Clear filters</ButtonLink>}>Try a different name, batch or status.</Empty>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          <ul className="md:hidden ledger">
+            {rows.map((v) => (
+              <li key={v.student.id}>
+                <Link href={`/staff/students/${v.student.id}`} className="flex items-center justify-between gap-3 px-4 py-3.5 active:bg-paper">
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{v.student.name}</p>
+                    <p className="text-[12px] text-ink-3 truncate"><span className="num">{v.student.id}</span> · {v.batch.name.replace(" 2027", "")}, {v.centre.name}</p>
+                    <div className="mt-1 flex gap-3"><LedgerTag l={v.ledger} withdrawn={v.student.status !== "active"} />{v.student.status === "active" && <RiskTag band={risk.get(v.student.id)!.band} />}</div>
+                  </div>
+                  <div className="text-right shrink-0 num">
+                    {v.ledger.overdue ? <p className="text-madder font-medium">{inr(v.ledger.overdue)}</p> : <p className="text-ink-3">{inr(v.ledger.balance)}</p>}
+                    <p className="text-[11.5px] text-ink-3">{v.ledger.overdue ? "overdue" : "balance"}</p>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <div className="overflow-x-auto hidden md:block">
             <table className="w-full text-[14px] min-w-[760px]">
               <thead className="text-left text-ink-3 text-[12px] uppercase tracking-wider">
                 <tr className="border-b border-rule">
@@ -107,6 +125,7 @@ export default async function Students({ searchParams }: { searchParams: Promise
               </tbody>
             </table>
           </div>
+          </>
         )}
       </Card>
     </>
