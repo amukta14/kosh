@@ -1,4 +1,4 @@
-import { addDays, daysBetween, isIsoDate } from "./dates";
+import { addDays, daysBetween, formatDate, isIsoDate } from "./dates";
 import { gstSplit } from "./money";
 
 /**
@@ -120,8 +120,8 @@ export function calculateRefund(input: RefundInput): RefundResult {
   const deadline = addDays(requestDate, REFUND_POLICY.settlementDays);
 
   const lines: RefundLine[] = [
-    { clause: "R2", label: "Course period for this student", detail: `${periodStart} to ${courseEnd} · ${totalDays} days`, amount: null },
-    { clause: "R2", label: "Days used", detail: `${periodStart} to ${leaveDate} · ${daysUsed} of ${totalDays} days`, amount: null },
+    { clause: "R2", label: "Course period for this student", detail: `${formatDate(periodStart)} to ${formatDate(courseEnd)} · ${totalDays} days`, amount: null },
+    { clause: "R2", label: "Days used", detail: `${formatDate(periodStart)} to ${formatDate(leaveDate)} · ${daysUsed} of ${totalDays} days`, amount: null },
     { clause: "R3", label: "Net fee", detail: "After scholarship / discount", amount: netFee },
     { clause: "R3", label: "Fee for days used", detail: `${netFee.toLocaleString("en-IN")} × ${daysUsed} ÷ ${totalDays}`, amount: -feeForDaysUsed },
     { clause: "R4", label: "Study material not returned", detail: material ? "At listed price" : "None", amount: material ? -material : 0 },

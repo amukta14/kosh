@@ -6,6 +6,9 @@ import { db, schema } from "@/db";
 import { requireRole } from "@/server/auth";
 import { getToday } from "@/server/clock";
 import { ClockBar } from "../_c/clock-bar";
+import { CommandPalette, type PaletteStudent } from "../_c/command";
+import { UserMenu } from "../_c/user-menu";
+import { loadStudents } from "@/server/queries";
 import { MobileNav } from "../_c/mobile-nav";
 import { Nav, type NavItem } from "../_c/nav";
 
@@ -33,6 +36,11 @@ export default async function DeskLayout({ children }: { children: React.ReactNo
           { href: "/staff/uploads", label: "Uploads" },
         ];
   const weekday = WEEKDAYS[new Date(today + "T00:00:00Z").getUTCDay()];
+  const palette: PaletteStudent[] =
+    s.role === "accounts"
+      ? (await loadStudents(today)).map((v) => ({ id: v.student.id, name: v.student.name, where: `${v.batch.name.replace(" 2027", "")}, ${v.centre.name}`, overdue: v.ledger.overdue, withdrawn: v.student.status !== "active" }))
+      : [];
+  const pages = items.map((i) => ({ href: i.href, label: i.label }));
 
   return (
     <div className="min-h-dvh flex flex-col">
@@ -40,17 +48,15 @@ export default async function DeskLayout({ children }: { children: React.ReactNo
       <div className="flex-1 flex">
         <aside className="hidden lg:flex w-[232px] shrink-0 flex-col border-r border-rule px-4 py-6 sticky top-0 h-dvh">
           <Link href={s.role === "counsellor" ? "/staff/risk" : "/staff"} className="px-3"><Wordmark /></Link>
-          <nav className="mt-8 flex-1" aria-label="Desk"><Nav items={items} /></nav>
-          <div className="px-3 text-[13px]">
-            <p className="font-medium">{s.name}</p>
-            <p className="text-ink-3 capitalize">{s.role}</p>
-            <form action={logoutAction}><button className="text-ink-2 hover:text-ink mt-2 underline underline-offset-4 decoration-rule">Log out</button></form>
-          </div>
+          <div className="mt-7 mb-4"><CommandPalette students={palette} pages={pages} /></div>
+          <nav className="flex-1" aria-label="Desk"><Nav items={items} /></nav>
+          <UserMenu name={s.name} role={s.role} />
         </aside>
         <div className="flex-1 min-w-0 flex flex-col">
           <header className="lg:hidden relative flex items-center justify-between px-4 h-14 border-b border-rule">
             <Wordmark />
             <div className="flex items-center gap-2">
+              <CommandPalette students={palette} pages={pages} compact />
               <form action={logoutAction}><button className="text-[13px] text-ink-2 px-2">Log out</button></form>
               <MobileNav items={items} />
             </div>

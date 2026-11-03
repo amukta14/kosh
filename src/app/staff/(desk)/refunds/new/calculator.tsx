@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { createRefund } from "@/app/actions/refunds";
 import { ActionForm } from "@/components/action-form";
-import { Submit } from "@/components/submit";
+import { ConfirmSubmit } from "@/components/dialog";
 import { Card, Field, Input, Notice, cx } from "@/components/ui";
 import { daysBetween, formatDate } from "@/domain/dates";
 import { inr, inr2 } from "@/domain/money";
@@ -43,7 +43,7 @@ export function RefundCalculator({ s, today }: { s: CalcStudent; today: string }
           <Field label="Last day attended" htmlFor="leaveDate"><Input id="leaveDate" name="leaveDate" type="date" value={leaveDate} max={today} onChange={(e) => setLeave(e.target.value)} /></Field>
           <Field label="Written request received" htmlFor="requestDate" hint="The 10-day clock starts here"><Input id="requestDate" name="requestDate" type="date" value={requestDate} max={today} onChange={(e) => setRequest(e.target.value)} /></Field>
           <Field label="Study material not returned (₹)" htmlFor="material" hint="Listed price only. Leave 0 if returned."><Input id="material" name="materialDeduction" inputMode="numeric" value={material} onChange={(e) => setMaterial(e.target.value.replace(/\D/g, ""))} /></Field>
-          <Submit disabled={!r} pendingText="Saving">Send for approval</Submit>
+          <ConfirmSubmit disabled={!r} title={r ? `Send a ${inr(r.refund)} refund for approval?` : "Send for approval?"} body="The student will be marked as withdrawn now and all fee reminders stop. Another accounts executive then approves the payout." confirmLabel="Send for approval">Send for approval</ConfirmSubmit>
           <p className="text-[12px] text-ink-3">Saving marks the student as withdrawn and stops reminders. A second accounts person approves the payout.</p>
         </ActionForm>
       </Card>

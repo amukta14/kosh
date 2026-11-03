@@ -41,11 +41,10 @@ export async function recordPayment(p: NewPayment, tx?: Tx) {
     const receiptNo = await nextReceiptNo(t, p.receivedOn);
     const id = newId("pay");
     await t.insert(schema.payments).values({ ...p, id, receiptNo, gatewayOrderId: p.gatewayOrderId ?? null, createdAt: nowIso() });
+    await audit(p.recordedBy, "payment.recorded", id, { ...p, receiptNo }, t);
     return { id, receiptNo };
   };
-  const res = tx ? await run(tx) : await db.transaction(run);
-  await audit(p.recordedBy, "payment.recorded", res.id, { ...p, receiptNo: res.receiptNo });
-  return res;
+  return tx ? run(tx) : db.transaction(run);
 }
 
 // ---- Mock payment gateway -------------------------------------------------

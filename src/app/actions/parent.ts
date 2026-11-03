@@ -7,7 +7,7 @@ import { db, schema } from "@/db";
 import { audit } from "@/server/audit";
 import { requireRole } from "@/server/auth";
 
-export const CONSENT_VERSION = "DPDP-1";
+const CONSENT_VERSION = "DPDP-1";
 
 /** Language choice also changes the language of reminder messages. */
 export async function setLanguage(form: FormData) {

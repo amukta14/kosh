@@ -1,14 +1,13 @@
 import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
-import { returnUnmatched } from "@/app/actions/payments";
-import { Button, Card, Empty, PageHead, SectionTitle, Tag } from "@/components/ui";
+import { Card, Empty, PageHead, SectionTitle, Tag } from "@/components/ui";
 import { db, schema } from "@/db";
 import { formatDate } from "@/domain/dates";
 import { inr } from "@/domain/money";
 import { requireRole } from "@/server/auth";
 import { getToday } from "@/server/clock";
 import { suggestionsFor } from "@/server/payments";
-import { ApplyForm, SimulateCreditForm } from "./forms";
+import { ApplyForm, ReturnForm, SimulateCreditForm } from "./forms";
 
 export const metadata = { title: "Payments" };
 
@@ -53,11 +52,8 @@ export default async function Payments() {
                       ))}
                     </div>
                     <div className="flex items-start gap-2">
-                      <ApplyForm id={u.id} suggestion={sug[0]?.studentId} />
-                      <form action={returnUnmatched}>
-                        <input type="hidden" name="id" value={u.id} />
-                        <Button tone="ghost" size="sm" className="h-9">Return</Button>
-                      </form>
+                      <ApplyForm id={u.id} suggestion={sug[0]?.studentId} amount={inr(u.amount)} />
+                      <ReturnForm id={u.id} amount={inr(u.amount)} payer={u.payerName} />
                     </div>
                   </div>
                 </Card>

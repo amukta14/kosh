@@ -127,8 +127,8 @@ export default async function Dashboard() {
             <SectionTitle aside="Not yet due">Coming in, next 4 weeks</SectionTitle>
             <Card className="px-4 py-2 ledger">
               {d.weeks.map((w) => (
-                <div key={w.from} className="py-3 grid grid-cols-[96px_1fr_auto] items-center gap-3 text-[13.5px]">
-                  <span className="text-ink-2">{formatDate(w.from, "en", false)}</span>
+                <div key={w.from} className="py-3 grid grid-cols-[104px_1fr_auto] items-center gap-3 text-[13.5px]">
+                  <span className="text-ink-2 num">{formatDate(w.from, "en", false)} to {formatDate(w.to, "en", false).split(" ")[0]}</span>
                   <div className="h-2 bg-paper-2 rounded-full overflow-hidden">
                     <div className="h-full bg-indigo rounded-full" style={{ width: `${(w.amount / maxWeek) * 100}%` }} />
                   </div>

@@ -62,7 +62,7 @@ export default async function RefundDetail({ params }: { params: Promise<{ id: s
             ))}
           </ol>
 
-          <SectionTitle>How it was worked out</SectionTitle>
+          <div className="mt-10"><SectionTitle>How it was worked out</SectionTitle></div>
           <Card>
             <table className="w-full text-[14px]">
               <tbody className="ledger">
@@ -84,7 +84,7 @@ export default async function RefundDetail({ params }: { params: Promise<{ id: s
           <Card className="p-4">
             <p className="eyebrow mb-3">Next step</p>
             {r.status === "pending_approval" ? (
-              r.createdBy === s.sub ? <Notice tone="ochre">You created this, so someone else must approve it.</Notice> : <Approve id={r.id} />
+              r.createdBy === s.sub ? <Notice tone="ochre">You created this, so someone else must approve it.</Notice> : <Approve id={r.id} amount={inr(r.refundAmount)} />
             ) : r.status === "approved" ? <MarkPaid id={r.id} /> : <Tag tone="leaf">Paid {r.paidOn && formatDate(r.paidOn)}</Tag>}
           </Card>
           <div>

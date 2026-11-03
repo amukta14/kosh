@@ -14,6 +14,7 @@ import { loadStudent, openFlagsFor, paymentsFor, remindersFor, riskFor } from "@
 import { db, schema } from "@/db";
 import { eq } from "drizzle-orm";
 import { RiskFactors } from "../../risk/factors";
+import { PhonePreview } from "@/components/phone-preview";
 
 export const metadata = { title: "Ledger" };
 
@@ -89,7 +90,7 @@ export default async function StudentLedger({ params }: { params: Promise<{ id: 
                         <td className="px-3 py-3 text-right text-ink-2">{i.paid ? inr(i.paid) : "0"}</td>
                         <td className={cx("px-3 py-3 text-right", i.balance > 0 && i.status === "overdue" && "text-madder font-medium")}>{inr(i.balance)}</td>
                         <td className="px-3 py-3"><InstalmentTag i={i} /></td>
-                        <td className="px-4 py-3"><Trail dueDate={i.dueDate} balance={active ? i.balance : 0} today={today} done={done} /></td>
+                        <td className="px-4 py-3"><Trail dueDate={i.dueDate} balance={active ? i.balance : 0} paidOn={i.paidOn} today={today} done={done} /></td>
                       </tr>
                     );
                   })}
@@ -110,7 +111,7 @@ export default async function StudentLedger({ params }: { params: Promise<{ id: 
                         <td className="px-4 py-3">{formatDate(p.receivedOn)}</td>
                         <td className="px-3 py-3 text-right font-medium">{inr(p.amount)}</td>
                         <td className="px-3 py-3 text-ink-2">{p.method.toUpperCase()}<span className="block text-[12px] text-ink-3 font-mono truncate max-w-[180px]">{p.reference}</span></td>
-                        <td className="px-3 py-3 text-[12.5px] text-ink-3">{p.recordedBy.startsWith("system:") ? (p.recordedBy === "system:gateway" ? "Pay link" : p.recordedBy === "system:matcher" ? "Auto-matched" : "Imported") : "Desk"}</td>
+                        <td className="px-3 py-3 text-[12.5px] text-ink-3">{p.recordedBy === "system:gateway" ? "Pay link" : p.recordedBy === "system:matcher" ? "Auto-matched" : "Desk"}</td>
                         <td className="px-4 py-3 text-right"><Link href={`/receipt/${p.id}`} className="text-indigo hover:underline underline-offset-4">{p.receiptNo}</Link></td>
                       </tr>
                     ))}
@@ -121,7 +122,7 @@ export default async function StudentLedger({ params }: { params: Promise<{ id: 
           </section>
 
           <section>
-            <SectionTitle aside={`${sent.length} sent`}>Messages to parent</SectionTitle>
+            <SectionTitle aside={<span className="flex items-center gap-3">{sent.length} sent <PhonePreview parentName={parent.name} phone={parent.phone} messages={sent.slice(0, 25).map((m) => ({ id: m.id, body: m.body, sentOn: m.sentOn, lang: m.language }))} /></span>}>Messages to parent</SectionTitle>
             {sent.length === 0 ? <Card><Empty title="No reminders sent yet" /></Card> : (
               <div className="flex flex-col gap-2">
                 {sent.slice(0, 6).map((m) => (
@@ -205,12 +206,12 @@ function Fig({ k, v, sub, tone }: { k: string; v: string; sub: string; tone?: "m
 }
 
 /** Reminder steps for one instalment: filled = sent, ring = scheduled, struck = cancelled by payment. */
-function Trail({ dueDate, balance, today, done }: { dueDate: string; balance: number; today: string; done: Map<number, "sent" | "superseded"> }) {
+function Trail({ dueDate, balance, paidOn, today, done }: { dueDate: string; balance: number; paidOn: string | null; today: string; done: Map<number, "sent" | "superseded"> }) {
   return (
     <div className="flex items-center gap-[5px]" aria-label="Reminder steps">
       {REMINDER_OFFSETS.map((o) => {
         const date = addDays(dueDate, o);
-        const st = done.get(o) ?? (balance <= 0 ? "cancelled" : daysBetween(date, today) >= 0 ? "pending" : "scheduled");
+        const st = done.get(o) ?? (balance <= 0 ? (paidOn && daysBetween(paidOn, date) <= 0 ? "superseded" : "cancelled") : daysBetween(date, today) >= 0 ? "pending" : "scheduled");
         const title = `${offsetLabel(o)} (${formatDate(date)}): ${st === "sent" ? "sent" : st === "superseded" ? "skipped, a later one was sent" : st === "cancelled" ? "not needed, paid" : st === "pending" ? "goes out on the next run" : "scheduled"}`;
         return (
           <span

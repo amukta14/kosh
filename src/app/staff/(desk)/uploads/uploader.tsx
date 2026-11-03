@@ -1,20 +1,27 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
+import { startTransition, useActionState, useEffect, useState, useTransition } from "react";
+import { PendingCtx, submitWith } from "@/components/pending";
+import { toast } from "@/components/toaster";
 import { templateFor, uploadAction, type UploadState } from "@/app/actions/uploads";
 import { Submit } from "@/components/submit";
 import { Button, Card, Field, Notice, Select, Textarea, cx } from "@/components/ui";
 
 export function Uploader({ batches, month }: { batches: { id: string; label: string }[]; month: string }) {
-  const [state, action] = useActionState<UploadState, FormData>(uploadAction, null);
+  const [state, action, busy] = useActionState<UploadState, FormData>(uploadAction, null);
+  useEffect(() => {
+    if (state?.done) toast(state.done);
+    if (state?.error) toast(state.error, "error");
+  }, [state]);
   const [kind, setKind] = useState<"attendance" | "scores">(state?.kind ?? "attendance");
   const [batchId, setBatch] = useState(state?.batchId ?? "");
   const [text, setText] = useState("");
   const [pending, start] = useTransition();
-  const clean = state && !state.error && !state.done && state.errors?.length === 0 && (state.count ?? 0) > 0 && state.text === text;
+  const clean = state && !state.error && !state.done && state.errors?.length === 0 && (state.count ?? 0) > 0 && state.text?.replace(/\r\n/g, "\n") === text.replace(/\r\n/g, "\n");
 
   return (
-    <form action={action} className="grid lg:grid-cols-[1fr_340px] gap-8">
+    <PendingCtx.Provider value={busy}>
+    <form onSubmit={(e) => submitWith(e, (fd) => startTransition(() => action(fd)))} className="grid lg:grid-cols-[1fr_340px] gap-8">
       <div className="flex flex-col gap-4">
         <div className="grid sm:grid-cols-2 gap-3">
           <Field label="What" htmlFor="kind">
@@ -71,5 +78,6 @@ export function Uploader({ batches, month }: { batches: { id: string; label: str
         )}
       </aside>
     </form>
+    </PendingCtx.Provider>
   );
 }

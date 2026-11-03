@@ -4,6 +4,7 @@ import { reviewFlag } from "@/app/actions/risk";
 import { ActionForm } from "@/components/action-form";
 import { Submit } from "@/components/submit";
 import { Textarea } from "@/components/ui";
+import { ConfirmSubmit } from "@/components/dialog";
 
 export function ReviewForm({ id }: { id: string }) {
   return (
@@ -13,7 +14,7 @@ export function ReviewForm({ id }: { id: string }) {
       <Textarea id={`note-${id}`} name="note" rows={2} placeholder="What did you find? e.g. Spoke to father, fees after harvest, attending again." className="font-sans text-[14px]" />
       <div className="flex flex-wrap gap-2">
         <Submit name="outcome" value="called" size="sm">Called, follow up</Submit>
-        <Submit name="outcome" value="false_flag" size="sm" tone="secondary">False flag</Submit>
+        <ConfirmSubmit name="outcome" value="false_flag" size="sm" tone="secondary" title="Mark as a false flag?" body="The student will not be flagged again for 30 days unless their risk rises by 15 points. Your note is kept to check the model later." confirmLabel="Mark false flag">False flag</ConfirmSubmit>
       </div>
     </ActionForm>
   );

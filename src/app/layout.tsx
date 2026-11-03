@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Instrument_Sans, Mukta } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "@/components/toaster";
 
 const fraunces = Fraunces({ subsets: ["latin"], variable: "--font-fraunces", axes: ["opsz"], display: "swap" });
 const instrument = Instrument_Sans({ subsets: ["latin"], variable: "--font-instrument", display: "swap" });
@@ -16,7 +17,10 @@ export const viewport: Viewport = { themeColor: "#f5f1e8", width: "device-width"
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${fraunces.variable} ${instrument.variable} ${mukta.variable}`}>
-      <body className="min-h-dvh">{children}</body>
+      <body className="min-h-dvh">
+        {children}
+        <Toaster />
+      </body>
     </html>
   );
 }

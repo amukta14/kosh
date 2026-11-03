@@ -195,7 +195,7 @@ export async function seedDatabase(today = DEFAULT_DEMO_DATE) {
         switch (s.profile) {
           case "punctual": delay = between(-6, 2); break;
           case "slow": delay = between(4, 40); break;
-          case "very_late": delay = i === 1 ? between(62, 105) : between(0, 25); break;
+          case "very_late": delay = i === 1 ? (rand() < 0.4 ? null : between(62, 105)) : between(0, 25); break;
           case "partial": delay = between(0, 20); break;
           case "struggling": delay = i >= (s.course === "NEET" ? 1 : 2) ? null : between(10, 50); break;
         }
@@ -243,11 +243,11 @@ export async function seedDatabase(today = DEFAULT_DEMO_DATE) {
   const recorded: (Payment & { studentId: string })[] = [];
   for (const p of allPayments) {
     const ref = p.method === "gateway" ? `pay_T${p.on.replace(/-/g, "")}${p.studentId.slice(4)}` : p.method === "upi" ? `UPI/${p.on.replace(/-/g, "").slice(2)}/${p.studentId}` : p.method === "neft" ? `NEFT FEE ${p.studentId}` : "Counter";
-    const r = await recordPayment({ studentId: p.studentId, amount: p.amount, receivedOn: p.on, method: p.method, reference: ref, recordedBy: p.method === "cash" ? "st-ramesh" : "system:seed" });
+    const r = await recordPayment({ studentId: p.studentId, amount: p.amount, receivedOn: p.on, method: p.method, reference: ref, recordedBy: p.method === "cash" ? "st-ramesh" : p.method === "gateway" ? "system:gateway" : rand() < 0.8 ? "system:matcher" : "st-neha" });
     recorded.push({ id: r.id, amount: p.amount, receivedOn: p.on, studentId: p.studentId });
   }
 
-  // ---- Reminder history: replay the job for each day of the last 60 days --
+  // ---- Reminder history: replay the daily job for every day since the course began --
   const byStudentPays = new Map<string, Payment[]>();
   for (const p of recorded) byStudentPays.set(p.studentId, [...(byStudentPays.get(p.studentId) ?? []), p]);
   const byStudentInst = new Map<string, typeof instRows>();
@@ -255,7 +255,7 @@ export async function seedDatabase(today = DEFAULT_DEMO_DATE) {
   const parentOf = new Map(parents.map((p) => [p.id, p]));
   const done = new Map<string, Map<number, "sent" | "superseded">>();
   const remRows: (typeof schema.reminders.$inferInsert)[] = [];
-  for (let day = addDays(today, -60); daysBetween(day, today) >= 0; day = addDays(day, 1)) {
+  for (let day = addDays(COURSE_START, -10); daysBetween(day, today) >= 0; day = addDays(day, 1)) {
     for (const s of students) {
       const pays = (byStudentPays.get(s.id) ?? []).filter((p) => daysBetween(p.receivedOn, day) >= 0);
       const ledger = buildLedger(byStudentInst.get(s.id)!.map((i) => ({ id: i.id!, seq: i.seq, dueDate: i.dueDate, amount: i.amount })), pays, day);
@@ -263,7 +263,6 @@ export async function seedDatabase(today = DEFAULT_DEMO_DATE) {
       for (const inst of ledger.instalments) {
         if (!done.has(inst.id)) done.set(inst.id, new Map());
         const m = done.get(inst.id)!;
-        // Steps that fell before the replay window are treated as already handled.
         const d = decideReminders(inst, day, m);
         if (d.send === null) continue;
         const base = { studentId: s.id, instalmentId: inst.id, channel: "whatsapp" as const, language: parent.language!, toPhone: parent.phone, balanceAtSend: inst.balance, sentOn: day };

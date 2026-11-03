@@ -40,3 +40,14 @@ describe("payment matching", () => {
     expect(matchIncoming({ amount: 100.5, reference: "STU-0587", payerName: "" }, cands).kind).toBe("queue");
   });
 });
+
+import { nameSimilarity } from "@/domain/matching";
+describe("name similarity", () => {
+  it("weighs surname above first name and accepts initials", () => {
+    expect(nameSimilarity("SURESH GURJAR", "Suresh Gurjar")).toBe(1);
+    expect(nameSimilarity("R SHARMA", "Rakesh Sharma")).toBe(1);
+    expect(nameSimilarity("SURESH GURJAR", "Vivaan Gurjar")).toBe(0.6);
+    expect(nameSimilarity("SURESH GURJAR", "Suresh Bhati")).toBe(0.35);
+    expect(nameSimilarity("", "Suresh Bhati")).toBe(0);
+  });
+});

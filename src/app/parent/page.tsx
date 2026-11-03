@@ -40,7 +40,6 @@ export default async function ParentHome({ searchParams }: { searchParams: Promi
               {" · "}
               {next.status === "overdue" ? d.daysLate(next.daysOverdue) : next.status === "due_today" ? d.dueToday : d.inDays(next.daysUntilDue)}
             </p>
-            {next.paid > 0 && <p className="text-[14px] text-ink-3 mt-1">{d.partPaid(inr(next.paid))}</p>}
             <ButtonLink href={`/p/${payToken(next.id)}`} size="lg" block className="mt-6">
               {d.pay(inr(next.balance))}
             </ButtonLink>

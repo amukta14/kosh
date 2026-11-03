@@ -1,11 +1,11 @@
 "use client";
 
-import { useFormStatus } from "react-dom";
+import { usePending } from "./pending";
 import { Button } from "./ui";
 import type { ComponentProps } from "react";
 
 export function Submit({ children, pendingText, ...p }: ComponentProps<typeof Button> & { pendingText?: string }) {
-  const { pending } = useFormStatus();
+  const pending = usePending();
   return (
     <Button type="submit" disabled={pending || p.disabled} aria-busy={pending} {...p}>
       {pending && <Spinner />}
