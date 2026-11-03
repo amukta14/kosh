@@ -1,0 +1,112 @@
+@import "tailwindcss";
+
+/*
+  Palette taken from Jaipur block print (Sanganer, Bagru): indigo, madder red,
+  ochre and leaf green, printed on unbleached cotton. Each colour has one job:
+  indigo = action, madder = overdue, ochre = part paid / watch, leaf = paid.
+*/
+@theme {
+  --color-paper: #f5f1e8;
+  --color-paper-2: #ede7da;
+  --color-card: #fffdf8;
+  --color-ink: #1c1b18;
+  --color-ink-2: #514d46;
+  --color-ink-3: #857f74;
+  --color-rule: #ddd5c5;
+  --color-rule-2: #e9e3d6;
+  --color-indigo: #22356a;
+  --color-indigo-deep: #18264d;
+  --color-indigo-wash: #e4e8f1;
+  --color-madder: #a5352a;
+  --color-madder-wash: #f5e2dd;
+  --color-ochre: #9c6b14;
+  --color-ochre-wash: #f4ead4;
+  --color-leaf: #3b6748;
+  --color-leaf-wash: #e1ebe2;
+
+  --font-sans: var(--font-instrument), var(--font-mukta), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-hindi: var(--font-mukta), var(--font-instrument), sans-serif;
+
+  --radius-card: 10px;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+}
+
+:lang(hi) body,
+.hi {
+  font-family: var(--font-hindi);
+}
+
+.num {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.display {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-variant-numeric: lining-nums;
+  letter-spacing: -0.02em;
+}
+
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+  font-weight: 600;
+}
+
+/* Ruled ledger rows, like a bound accounts register. */
+.ledger > * + * {
+  border-top: 1px solid var(--color-rule-2);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-indigo);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.rise { animation: rise 0.35s ease-out both; }
+
+@keyframes stamp {
+  0% { opacity: 0; transform: rotate(-8deg) scale(1.4); }
+  60% { opacity: 1; transform: rotate(-8deg) scale(0.96); }
+  100% { opacity: 1; transform: rotate(-8deg) scale(1); }
+}
+.stamp { animation: stamp 0.45s cubic-bezier(.2,.8,.3,1) both; }
+
+@keyframes shimmer {
+  from { background-position: -200px 0; }
+  to { background-position: 200px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--color-paper-2) 0, #f3eee4 40px, var(--color-paper-2) 80px) var(--color-paper-2);
+  background-size: 400px 100%;
+  animation: shimmer 1.2s linear infinite;
+  border-radius: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise, .stamp, .skeleton { animation: none; }
+}
+
+@media print {
+  body { background: white; }
+  .no-print { display: none !important; }
+}

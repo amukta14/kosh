@@ -67,3 +67,13 @@ describe("ageing and the 60-day metric", () => {
     expect(late60Share(r)).toBe(0.5);
   });
 });
+
+import { rupeesInWords } from "@/domain/money";
+describe("amount in words", () => {
+  it("uses lakh and crore", () => {
+    expect(rupeesInWords(120000)).toBe("One Lakh Twenty Thousand Rupees Only");
+    expect(rupeesInWords(15000)).toBe("Fifteen Thousand Rupees Only");
+    expect(rupeesInWords(31_20_00_000)).toBe("Thirty One Crore Twenty Lakh Rupees Only");
+    expect(rupeesInWords(10833)).toBe("Ten Thousand Eight Hundred Thirty Three Rupees Only");
+  });
+});
