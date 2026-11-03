@@ -6,8 +6,9 @@ const globalForDb = globalThis as unknown as { client?: Client; db?: LibSQLDatab
 
 function makeClient() {
   return createClient({
-    url: process.env.DATABASE_URL ?? "file:./local.db",
-    authToken: process.env.DATABASE_AUTH_TOKEN || undefined,
+    // TURSO_* names are what the Vercel Marketplace Turso integration injects.
+    url: process.env.DATABASE_URL || process.env.TURSO_DATABASE_URL || "file:./local.db",
+    authToken: process.env.DATABASE_AUTH_TOKEN || process.env.TURSO_AUTH_TOKEN || undefined,
   });
 }
 
