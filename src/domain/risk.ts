@@ -45,7 +45,7 @@ export interface RiskResult {
 
 export const RISK_MODEL = {
   version: "risk-v1",
-  intercept: -3.1,
+  intercept: -2.9,
   coef: {
     overdueInstalments: 0.85, // per instalment more than 7 days overdue
     feeAge: 0.6, // per 30 days the oldest debt is overdue (capped at 90)

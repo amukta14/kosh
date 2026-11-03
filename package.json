@@ -7,9 +7,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "setup": "node scripts/env.mjs && tsx scripts/seed.ts",
+    "setup": "node scripts/env.mjs && npm run db:seed",
     "db:generate": "drizzle-kit generate",
-    "db:seed": "tsx scripts/seed.ts",
+    "db:seed": "tsx --env-file=.env.local --conditions=react-server scripts/seed.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
@@ -21,6 +21,7 @@
     "next": "15.3.3",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "server-only": "^0.0.1",
     "zod": "3.25.67"
   },
   "devDependencies": {
