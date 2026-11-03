@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kosh: Technical Design Document</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Instrument+Sans:wght@400;500;600&family=Mukta:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  @page { size: A4; margin: 18mm 16mm 18mm 16mm; }
+  :root { --paper:#fffdf8; --ink:#1c1b18; --ink2:#514d46; --ink3:#857f74; --rule:#ddd5c5; --indigo:#22356a; --madder:#a5352a; --ochre:#9c6b14; --leaf:#3b6748; --wash:#f5f1e8; }
+  * { box-sizing: border-box; }
+  body { font-family: "Instrument Sans", "Mukta", sans-serif; color: var(--ink); font-size: 10.4pt; line-height: 1.5; margin: 0; background: white; }
+  h1, h2, h3 { font-family: "Fraunces", Georgia, serif; font-weight: 500; letter-spacing: -0.01em; }
+  h1 { font-size: 30pt; line-height: 1.05; margin: 0 0 6pt; }
+  h2 { font-size: 16pt; margin: 22pt 0 6pt; padding-top: 8pt; border-top: 1px solid var(--rule); break-after: avoid; }
+  h3 { font-size: 12pt; margin: 14pt 0 4pt; break-after: avoid; }
+  p { margin: 0 0 7pt; }
+  ul, ol { margin: 0 0 8pt; padding-left: 15pt; }
+  li { margin-bottom: 2.5pt; }
+  code, .mono { font-family: ui-monospace, Menlo, monospace; font-size: 8.8pt; background: var(--wash); padding: 0 3px; border-radius: 3px; }
+  table { width: 100%; border-collapse: collapse; margin: 6pt 0 10pt; font-size: 9.3pt; break-inside: auto; }
+  th { text-align: left; font-weight: 600; color: var(--ink2); border-bottom: 1.5px solid var(--ink); padding: 4pt 6pt 4pt 0; }
+  td { border-bottom: 1px solid var(--rule); padding: 4pt 6pt 4pt 0; vertical-align: top; }
+  tr { break-inside: avoid; }
+  .eyebrow { font-size: 8pt; letter-spacing: .09em; text-transform: uppercase; color: var(--ink3); font-weight: 600; }
+  .cover { border-top: 6px solid; border-image: repeating-linear-gradient(90deg, var(--indigo) 0 14px, var(--madder) 14px 20px, var(--ochre) 20px 26px) 6; padding-top: 18pt; margin-bottom: 14pt; }
+  .links { margin-top: 12pt; display: grid; grid-template-columns: 120px 1fr; gap: 3pt 10pt; font-size: 10pt; }
+  .links b { color: var(--ink2); font-weight: 600; }
+  .todo { color: var(--madder); font-weight: 600; }
+  .callout { background: var(--wash); border-left: 3px solid var(--indigo); padding: 7pt 10pt; margin: 8pt 0 10pt; border-radius: 4px; }
+  .callout.madder { border-color: var(--madder); }
+  .tag { display: inline-block; font-size: 8pt; font-weight: 600; padding: 0 5px; border-radius: 3px; background: var(--wash); color: var(--indigo); margin-right: 3px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12pt; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10pt; }
+  figure { margin: 6pt 0 10pt; break-inside: avoid; }
+  figure img { width: 100%; border: 1px solid var(--rule); border-radius: 6px; display: block; }
+  figcaption { font-size: 8.6pt; color: var(--ink2); margin-top: 3pt; }
+  .phone img { max-height: 330pt; width: auto; max-width: 100%; margin: 0 auto; }
+  .num { font-variant-numeric: tabular-nums; }
+  .flow { font-size: 9.3pt; }
+  .flow li { margin-bottom: 3pt; }
+  .diagram { width: 100%; margin: 4pt 0 10pt; }
+  .small { font-size: 9pt; color: var(--ink2); }
+  .avoid { break-inside: avoid; }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <p class="eyebrow">Technical Design Document · Brief 5: Coaching institute fee tracking and parent portal</p>
+  <h1>Kosh</h1>
+  <p style="font-size:12.5pt;color:var(--ink2);max-width:52ch">A fee ledger, parent portal and dues desk for Company A, Jaipur. Parents know what they owe without calling. Reminders send themselves and stop on payment. Accounts get one view of every centre.</p>
+  <div class="links">
+    <b>GitHub</b><span class="todo">GITHUB_URL</span>
+    <b>Live app</b><span class="todo">LIVE_URL</span>
+    <b>Run locally</b><span><code>npm install &amp;&amp; npm run setup &amp;&amp; npm run dev</code> (see deployment.md)</span>
+    <b>Demo logins</b><span>Parent <span class="mono">98290 00587</span> (code shown on screen) · Accounts <span class="mono">neha@companya.test</span> · Counsellor <span class="mono">vikram@companya.test</span> · password <span class="mono">kosh-demo-2026</span></span>
+  </div>
+</section>
+
+<h2>1. What I built, in one page</h2>
+<p>The brief's core slice, end to end, on realistic data: 184 students across 4 centres and 16 batches, with seven months of payments, reminders, attendance and test scores, including the three sample students exactly as given.</p>
+<table>
+  <tr><th style="width:30%">Core build item</th><th>Where it is</th></tr>
+  <tr><td>Fee ledger</td><td>Staff: Students → any student. Plan, discount, instalments, FIFO allocation, balance, days overdue, receipts, messages sent, record a payment.</td></tr>
+  <tr><td>Parent portal with dues and pay link</td><td>OTP login. First screen is amount, due date and one pay button. Fee plan and GST receipts, attendance and test scores. Hindi and English.</td></tr>
+  <tr><td>Reminders that stop on payment</td><td>Daily job, 7 steps per instalment (7 and 3 days before, on the day, 3, 7, 15, 30 after). Paying cancels the rest at once, because each run reads the live ledger.</td></tr>
+  <tr><td>Refund calculator</td><td>Policy written as code (clauses R1 to R7), the same clauses rendered on the public policy page. Shows its working line by line, the 10-day deadline, a GST credit note. Maker-checker approval.</td></tr>
+  <tr><td>Dues dashboard</td><td>Overdue by centre × batch heatmap, ageing buckets, the brief's 60-day metric against its baseline and target, collections due in the next four weeks, Tally XML and CSV export.</td></tr>
+  <tr><td>Roles</td><td>Parent, accounts executive, and counsellor (the brief says counsellors mark false flags, so they get their own role with only the call list).</td></tr>
+  <tr><td>AI: dropout-risk flag</td><td>Explainable logistic score from missed instalments, attendance and test trends. High risk opens a counsellor call task only. "Unsure" is shown but opens nothing. Counsellors mark false flags, which suppress re-flagging and feed a live precision figure.</td></tr>
+</table>
+<p>Optional depth also built: bulk CSV upload of attendance and test scores per batch, payment matching with an unmatched queue, Tally export, DPDP consent capture, GST receipts, a test-mode payment gateway with signed webhooks, a ⌘K command palette, a WhatsApp preview of what the parent received, and a <b>demo clock</b> that moves the business date forward and runs the daily jobs, so a reviewer can watch reminders fire and stop.</p>
+
+<h2>2. Assumptions</h2>
+<p>Everything below is my assumption, not something the brief states. Each is labelled so it can be checked with the client.</p>
+<table>
+  <tr><th style="width:7%">#</th><th>Assumption</th><th style="width:30%">Why</th></tr>
+  <tr><td>A1</td><td>Demo "today" is <b>2 Nov 2026</b>.</td><td>Only date where the sample rows agree: 10 Oct + 23 days overdue, and 15 Nov − 13 days.</td></tr>
+  <tr><td>A2</td><td>2027 batches run 6 Apr 2026 to 31 Mar 2027 (360 days).</td><td>Usual Kota/Jaipur session for a 2027 exam.</td></tr>
+  <tr><td>A3</td><td>Gross fee ₹1,20,000. JEE: 4 × ₹30,000 on 10 Apr, 10 Jul, 10 Oct, 10 Jan. NEET: 3 × ₹40,000 on 15 Apr, 14 Aug, 15 Nov.</td><td>Matches the brief's average fee, "3 or 4 instalments" and the sample amounts and dates.</td></tr>
+  <tr><td>A4</td><td>Fees are GST-inclusive at 18%, SAC 999293, intra-state so CGST 9% + SGST 9%.</td><td>Coaching is taxable at 18%; all centres are in Rajasthan.</td></tr>
+  <tr><td>A5</td><td>Part payments clear the oldest instalment first (FIFO).</td><td>How fee desks usually work; keeps "days overdue" about the oldest debt.</td></tr>
+  <tr><td>A6</td><td>Reminders go by WhatsApp (mocked), one per step, at the 08:30 IST daily run, in the parent's chosen language.</td><td>Parents use low-end phones and WhatsApp already (scores go out there today).</td></tr>
+  <tr><td>A7</td><td>Refund policy text R1 to R7 (see section 5) is my reading of the 2024 guidelines: pro-rata by day for the unattended period, unreturned printed material deductible at list price, no other charges, paid within 10 days of the written request.</td><td>The brief requires a published, pro-rata policy but does not give the client's wording.</td></tr>
+  <tr><td>A8</td><td>GSTIN, company legal name and Tally ledger names are placeholders.</td><td>Not in the brief. No real identifiers in the repo.</td></tr>
+  <tr><td>A9</td><td>An OTP-verified login from the mobile number the centre holds for the parent counts as verifiable parental consent under DPDP, recorded with time and policy version. Retention 8 years after the course (tax records).</td><td>DPDP rules allow verification against reliable identity details already held.</td></tr>
+  <tr><td>A10</td><td>Risk model coefficients are hand-set.</td><td>No history of who dropped out exists yet. Section 6 explains how it gets refit.</td></tr>
+  <tr><td>A11</td><td>A bank credit is applied automatically only if its narration contains a valid student ID and the amount is within that student's balance.</td><td>A wrong match would mark someone else's child as paid.</td></tr>
+  <tr><td>A12</td><td>Pay links open without a login (signed, unguessable, show only first name and amount).</td><td>One tap from WhatsApp on a basic phone; logging in first would cost payments.</td></tr>
+  <tr><td>A13</td><td>Refunds need two accounts people (maker-checker).</td><td>Money leaving the business; common control.</td></tr>
+  <tr><td>A14</td><td>Seed data is a 184-student sample, not 2,600. All names and numbers are fictional.</td><td>Enough to make every screen realistic; the code paths do not change with size.</td></tr>
+</table>
+
+<h2>3. Architecture</h2>
+<svg class="diagram" viewBox="0 0 720 210" xmlns="http://www.w3.org/2000/svg" font-family="Instrument Sans, sans-serif" font-size="11">
+  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#514d46"/></marker></defs>
+  <rect x="8" y="20" width="150" height="70" rx="8" fill="#f5f1e8" stroke="#ddd5c5"/><text x="83" y="45" text-anchor="middle" font-weight="600">Parent phone</text><text x="83" y="62" text-anchor="middle" fill="#514d46">portal, pay link</text><text x="83" y="77" text-anchor="middle" fill="#514d46">WhatsApp reminders</text>
+  <rect x="8" y="120" width="150" height="70" rx="8" fill="#f5f1e8" stroke="#ddd5c5"/><text x="83" y="145" text-anchor="middle" font-weight="600">Staff browser</text><text x="83" y="162" text-anchor="middle" fill="#514d46">accounts desk</text><text x="83" y="177" text-anchor="middle" fill="#514d46">counsellor call list</text>
+  <rect x="210" y="10" width="300" height="190" rx="10" fill="#fff" stroke="#22356a" stroke-width="1.5"/>
+  <text x="360" y="32" text-anchor="middle" font-weight="600" fill="#22356a">Next.js app (one deployable)</text>
+  <rect x="226" y="44" width="130" height="62" rx="6" fill="#e4e8f1"/><text x="291" y="66" text-anchor="middle" font-weight="600">Pages + actions</text><text x="291" y="82" text-anchor="middle" fill="#514d46">src/app</text><text x="291" y="96" text-anchor="middle" fill="#514d46">auth on every call</text>
+  <rect x="366" y="44" width="130" height="62" rx="6" fill="#e4e8f1"/><text x="431" y="66" text-anchor="middle" font-weight="600">Server layer</text><text x="431" y="82" text-anchor="middle" fill="#514d46">src/server</text><text x="431" y="96" text-anchor="middle" fill="#514d46">DB, jobs, gateway</text>
+  <rect x="226" y="118" width="270" height="68" rx="6" fill="#f4ead4"/><text x="361" y="140" text-anchor="middle" font-weight="600">Domain rules (pure TypeScript, unit tested)</text><text x="361" y="157" text-anchor="middle" fill="#514d46">fees · refunds · risk · reminders · matching</text><text x="361" y="172" text-anchor="middle" fill="#514d46">GST · ageing · Tally · CSV</text>
+  <rect x="560" y="20" width="150" height="70" rx="8" fill="#f5f1e8" stroke="#ddd5c5"/><text x="635" y="45" text-anchor="middle" font-weight="600">libSQL / SQLite</text><text x="635" y="62" text-anchor="middle" fill="#514d46">file locally</text><text x="635" y="77" text-anchor="middle" fill="#514d46">Turso in production</text>
+  <rect x="560" y="120" width="150" height="70" rx="8" fill="#f5f1e8" stroke="#ddd5c5"/><text x="635" y="142" text-anchor="middle" font-weight="600">Mocked outside</text><text x="635" y="158" text-anchor="middle" fill="#514d46">gateway (HMAC webhook)</text><text x="635" y="173" text-anchor="middle" fill="#514d46">SMS / WhatsApp · bank feed</text>
+  <line x1="158" y1="55" x2="208" y2="70" stroke="#514d46" marker-end="url(#a)"/><line x1="158" y1="155" x2="208" y2="140" stroke="#514d46" marker-end="url(#a)"/>
+  <line x1="510" y1="60" x2="558" y2="55" stroke="#514d46" marker-end="url(#a)"/><line x1="510" y1="150" x2="558" y2="155" stroke="#514d46" marker-end="url(#a)"/>
+  <text x="535" y="108" text-anchor="middle" fill="#857f74" font-size="10">daily cron</text>
+</svg>
+<h3>Why this shape</h3>
+<ul>
+  <li><b>One Next.js app, server-rendered.</b> The parent screens ship about 105 kB of JavaScript and render on the server, which suits low-end phones on patchy data. Server actions remove a separate API layer, so a two-person team can run it. Six weeks and ₹6 lakh do not pay for a microservice estate.</li>
+  <li><b>The hard rules are pure functions.</b> Instalments, FIFO allocation, refunds, risk, reminder schedules, matching and GST take plain data and "today" as input. That makes them easy to test, easy to read in an interview, and the same code runs in the browser for the live refund preview and on the server when the refund is saved.</li>
+  <li><b>Balances are computed, not stored.</b> The ledger is derived from instalments plus payments every time. There is no running balance that can drift out of step with receipts, which is the root cause of month-end reconciliation taking four days.</li>
+  <li><b>SQLite via libSQL.</b> The whole school is a few thousand rows a year. A file locally, Turso when hosted, same driver and migrations. Drizzle gives typed queries and a migration file in the repo.</li>
+  <li><b>Everything outside is behind one seam.</b> The gateway, the SMS/WhatsApp sender and the bank feed are mocked, but each mock goes through the same path the real one would: the test checkout posts a signed callback to the same handler as <code>/api/gateway/webhook</code>; reminders are written to an outbox table that a sender would drain.</li>
+</ul>
+
+<h2>4. Data model</h2>
+<table>
+  <tr><th style="width:22%">Table</th><th>Holds</th><th style="width:33%">Notes</th></tr>
+  <tr><td>centres, batches</td><td>4 centres, 16 batches (course, start, end)</td><td>Batch dates drive the refund period.</td></tr>
+  <tr><td>parents</td><td>Name, mobile, language, consent time and version</td><td>Unique mobile; language also sets reminder language.</td></tr>
+  <tr><td>students</td><td>ID (STU-0587), batch, parent, joined, status, withdrawn on</td><td>Several students can share a parent (siblings).</td></tr>
+  <tr><td>fee_plans</td><td>Gross fee, discount type/value/reason, net fee</td><td>Percent or flat discount, validated.</td></tr>
+  <tr><td>instalments</td><td>Student, sequence, due date, amount</td><td>Parts always sum to the net fee.</td></tr>
+  <tr><td>payments</td><td>Amount, date, method, reference, receipt number, gateway order, who recorded it</td><td>The only source of truth for money in. Unique receipt and gateway order.</td></tr>
+  <tr><td>gateway_orders</td><td>Order per pay attempt, fixed amount, status</td><td>Amount taken from the ledger on the server.</td></tr>
+  <tr><td>unmatched_payments</td><td>Credits the matcher would not place, reason, resolution</td><td>Nothing is marked paid on a guess.</td></tr>
+  <tr><td>reminders</td><td>Instalment, step, sent or superseded, language, body, balance at send</td><td>Unique (instalment, step): a step can never send twice.</td></tr>
+  <tr><td>attendance, test_scores</td><td>Monthly present/total; tests with score/max</td><td>Upserted by bulk upload.</td></tr>
+  <tr><td>risk_flags</td><td>Probability, factors (JSON), status open/called/false flag, note, reviewer</td><td>Only ever read by the call list.</td></tr>
+  <tr><td>refunds</td><td>Request and leave dates, deduction, amount, calculation snapshot, policy version, deadline, status, maker, checker, payout ref</td><td>Snapshot keeps old refunds explainable after a policy change.</td></tr>
+  <tr><td>staff, otp_codes, audit_log, settings</td><td>Logins, hashed OTPs, every money and consent action, receipt counters and demo clock</td><td>Audit rows commit inside the same transaction as the payment.</td></tr>
+</table>
+<p class="small">Money is stored as whole rupees. GST is split in paise on receipts and exports so CGST + SGST + taxable always add back exactly to the amount received.</p>
+
+<h2>5. Main flows</h2>
+<div class="grid2 flow">
+<div class="avoid">
+<h3>Parent pays from a reminder</h3>
+<ol>
+  <li>08:30 job sees instalment 3 is 15 days overdue, sends the +15 step in Hindi with a signed pay link.</li>
+  <li>Link opens with no login: first name, amount, due date, one button.</li>
+  <li>Server creates a gateway order for the ledger balance (never a client amount).</li>
+  <li>Gateway calls back signed. Handler checks HMAC, order, amount, and that it is not already paid, then records the payment, receipt number and audit row in one transaction.</li>
+  <li>Instalment balance is now zero, so the next job run sends nothing for it and the trail shows the remaining steps as stopped. The parent is told how many upcoming reminders were cancelled, and gets a GST receipt.</li>
+</ol>
+</div>
+<div class="avoid">
+<h3>Reminder rules</h3>
+<ul>
+  <li>Steps at −7, −3, 0, +3, +7, +15, +30 days.</li>
+  <li>If the job missed days (or the demo clock jumps a week), only the latest due step is sent; older ones are marked superseded. Parents never get a burst.</li>
+  <li>Withdrawn students get nothing.</li>
+  <li>The amount in each message is the live balance, so part payments are reflected.</li>
+  <li>Idempotent: a unique index on (instalment, step) means re-running the job is always safe.</li>
+</ul>
+<h3>Bank credit arrives</h3>
+<ul>
+  <li>Narration has a valid student ID and amount ≤ balance: applied, receipt issued.</li>
+  <li>Anything else (no ID, unknown ID, overpayment, gateway order mismatch) goes to the queue with a reason and name-based suggestions. A person applies it after a confirm dialog, or marks it returned.</li>
+</ul>
+</div>
+</div>
+
+<h3>Refund rules (the hard part)</h3>
+<table>
+  <tr><th style="width:8%">Clause</th><th>Rule as implemented</th></tr>
+  <tr><td>R2</td><td>Period starts at the later of course start and joining date; days used run to the last day attended, inclusive, capped at the course length.</td></tr>
+  <tr><td>R3</td><td>Fee for days used = net fee (after discount) × days used ÷ total days, rounded to the rupee.</td></tr>
+  <tr><td>R4</td><td>Unreturned printed material at list price, capped at ₹15,000 (above that needs a manual review). No admission, processing or cancellation charge.</td></tr>
+  <tr><td>R5</td><td>Refund = paid − fee for days used − material. Never below zero; a shortfall is shown for the record but not demanded.</td></tr>
+  <tr><td>R6</td><td>Deadline = written request date + 10 days. Shown as a countdown, red at 3 days.</td></tr>
+  <tr><td>R7</td><td>GST credit note split for the refunded amount.</td></tr>
+</table>
+<p>Worked example from the seed: Aarav paid ₹90,000 of ₹1,20,000. Leaving after 218 of 360 days, fee for days used is ₹72,667, refund ₹17,333, due within 10 days. Saving the refund marks the student withdrawn (reminders stop at once); a second accounts person approves it, then it is marked paid with the bank reference.</p>
+
+<h2>6. How the AI part works, and what happens when it is wrong</h2>
+<p>The dropout-risk flag is a small logistic model, chosen over a black box because a counsellor has to be able to see <i>why</i> before calling a parent about their child.</p>
+<table>
+  <tr><th style="width:30%">Signal</th><th>Feature</th><th style="width:14%">Weight</th></tr>
+  <tr><td>Missed instalments</td><td>Instalments unpaid more than 7 days</td><td>0.85 each</td></tr>
+  <tr><td>Age of debt</td><td>Days the oldest is overdue, per 30, capped at 90</td><td>0.6</td></tr>
+  <tr><td>Low attendance</td><td>Below 80% in the latest month</td><td>4.0 × gap</td></tr>
+  <tr><td>Falling attendance</td><td>Earlier months vs last two, percentage points</td><td>0.06 per pt</td></tr>
+  <tr><td>Falling scores</td><td>Least-squares slope over the last 3 or 4 tests</td><td>0.09 per pt</td></tr>
+</table>
+<p>Probability = sigmoid(−2.9 + sum of contributions). Each contribution is stored with the flag and drawn as a bar on the call card.</p>
+<div class="callout">
+<b>Guard rails</b>
+<ul style="margin:4pt 0 0">
+  <li><b>It can only create a call task.</b> The risk job's only write is to <code>risk_flags</code>; it has no code path to fees, reminders or parent messages.</li>
+  <li><b>Unsure is a first-class answer.</b> Between 35% and 60% the student is listed under "Watching" with the reasons, but nobody is asked to call. A single signal on its own can never reach "high". With under two months of attendance and two tests, and no fee signal, the answer is "too little data".</li>
+  <li><b>Counsellors correct it.</b> Closing a task needs a note and an outcome: called, or false flag. A false flag suppresses that student for 30 days unless risk rises by 15 points. The call list shows live precision (real flags ÷ reviewed).</li>
+  <li><b>It learns later, not silently.</b> Reviewed flags are the labels needed to refit the weights once a term of outcomes exists. Weights only change in a reviewed release (model version is shown on the page).</li>
+</ul>
+</div>
+<p>Payment matching is the other automation. Its failure mode is handled the same way: when unsure it does nothing and asks a person (section 5).</p>
+
+<h2>7. UI and design decisions</h2>
+<p>The client asked for restrained, purposeful design and for parents to understand their dues in five seconds. The palette comes from Jaipur block print (Sanganer, Bagru): indigo on unbleached cotton, with madder red, ochre and leaf green. Each colour has one job: <span class="tag">indigo = act</span><span class="tag" style="color:var(--madder)">madder = overdue</span><span class="tag" style="color:var(--ochre)">ochre = part paid / watch</span><span class="tag" style="color:var(--leaf)">leaf = paid</span>. Amounts are set in Fraunces, a serif with tabular figures, so numbers read like a ledger; interface text is Instrument Sans with Mukta for Devanagari. No gradients, no stock icons, no decorative charts.</p>
+
+<div class="grid3">
+  <figure class="phone"><img src="screens/parent-dues.jpg"><figcaption><b>Parent, first screen.</b> Amount, due date with days late, one pay button, nothing else. Hindi by default for this parent; one tap switches to English and also changes reminder language.</figcaption></figure>
+  <figure class="phone"><img src="screens/payment-done.jpg"><figcaption><b>After paying.</b> A stamped receipt number and a plain statement that the remaining reminders are cancelled, so the parent trusts the next message.</figcaption></figure>
+  <figure class="phone"><img src="screens/phone-preview.jpg"><figcaption><b>What the parent received.</b> Staff can open the exact WhatsApp thread for any student, useful when a parent calls to dispute a message.</figcaption></figure>
+</div>
+
+<div class="grid3">
+  <figure class="phone"><img src="screens/consent.jpg"><figcaption><b>DPDP consent.</b> Shown once, in the parent's language: what, why, how long, their rights. "Not now" still shows fees but hides attendance and scores.</figcaption></figure>
+  <figure class="phone"><img src="screens/parent-fees.jpg"><figcaption><b>Fee plan.</b> Balance against the net fee, each instalment with a status word, then receipts. Discounts are shown with their reason.</figcaption></figure>
+  <figure class="phone"><img src="screens/parent-progress.jpg"><figcaption><b>Progress.</b> Monthly attendance as bars that turn ochre then madder below 85% and 75%, and test scores with a trend line. A switcher for families with more than one child.</figcaption></figure>
+</div>
+
+<div class="grid2">
+  <figure><img src="screens/dashboard.jpg"><figcaption><b>Dues desk.</b> Headline figures separated by hairlines, the 60-day metric drawn against the brief's 12% baseline and 6% target, and a centre × batch heatmap that answers "where is money stuck" and links straight to the filtered list.</figcaption></figure>
+  <figure><img src="screens/receipt.jpg"><figcaption><b>GST receipt.</b> Taxable value, CGST and SGST, SAC, amount in words in lakh/crore. Printable or saved as PDF. Reachable by the parent through a signed link without logging in.</figcaption></figure>
+</div>
+
+<figure><img src="screens/reminder-trail.png"><figcaption><b>Reminder trail on the ledger.</b> One dot per step: filled = sent, ring = scheduled, slashed = stopped by payment. This makes "reminders stop on payment" visible at a glance rather than something staff have to trust.</figcaption></figure>
+
+<div class="grid2">
+  <figure><img src="screens/refund-calculator.jpg"><figcaption><b>Refund calculator.</b> Live as you type; the course drawn as used vs refunded days; each line tagged with its policy clause; the deadline as a date and a countdown.</figcaption></figure>
+  <figure><img src="screens/command-palette.jpg"><figcaption><b>Find anyone, fast.</b> Press / or ⌘K anywhere on the desk. Overdue students show their amount in madder in the results.</figcaption></figure>
+</div>
+<div class="grid2">
+  <figure><img src="screens/confirm-dialog.jpg"><figcaption><b>Confirm before money moves.</b> Applying a credit, returning one, approving or paying a refund, sending a refund for approval, marking a false flag, and resetting the demo all ask first, in plain words about the consequence.</figcaption></figure>
+  <figure><img src="screens/call-list.jpg"><figcaption><b>Counsellor call list.</b> Probability, the reasons as bars, the parent's number as a tap-to-call link, and a note box. The rules about what a flag can and cannot do are stated on the page.</figcaption></figure>
+</div>
+
+<h3>States and details</h3>
+<ul>
+  <li>Loading skeletons on the desk, pending spinners on every submit button, empty states with a next step, a page-level error boundary that says nothing was changed, and a not-found page. Toasts confirm each action even when the form is off-screen.</li>
+  <li>Forms keep what was typed when the server rejects them (React 19 clears forms by default; I submit through <code>onSubmit</code> to avoid that).</li>
+  <li>Phone layouts: parent pages are designed for 360 px first; the student list becomes a card list below tablet width and wide tables scroll inside their card; the desk menu collapses.</li>
+  <li>Accessible basics: labelled inputs, native <code>&lt;dialog&gt;</code> modals with focus handling and Esc, visible focus rings, reduced-motion respected, colour never the only signal (every status has a word).</li>
+</ul>
+
+<h2>8. Security and privacy</h2>
+<ul>
+  <li><b>Sign-in.</b> Parents: 6-digit OTP, HMAC-hashed at rest, 5-minute expiry, 5 tries, 3 sends per 10 minutes, same reply for unknown numbers. Staff: bcrypt passwords, constant-time comparison even for unknown emails. Sessions are signed HS256 cookies, httpOnly, SameSite=Lax, Secure in production.</li>
+  <li><b>Access control.</b> Middleware gates <code>/parent</code> and <code>/staff</code>, and every page and server action checks the role again. Parents only ever load students whose parent ID equals their session ID. Counsellors see only the call list; only counsellors can close flags; only accounts can touch money or export.</li>
+  <li><b>Money integrity.</b> Amounts come from the server ledger, not the browser. Gateway callbacks are HMAC-verified, idempotent and re-checked inside a transaction. Receipt numbers are allocated inside the same transaction. Refunds are recomputed on the server and need a second person.</li>
+  <li><b>Inputs.</b> Zod validation on every action; CSV uploads are all-or-nothing with per-line errors; CSV exports guard against spreadsheet formula injection; XML is escaped.</li>
+  <li><b>DPDP.</b> Consent screen on first login explains what, why, how long and the parent's rights; consent is stored with version and time against the OTP-verified number and audited. Parents who skip it still see fees (needed to run the contract) but not attendance or scores.</li>
+  <li><b>Secrets.</b> None in the repo. <code>npm run setup</code> generates them locally. All personal data in the repo is fictional seed data.</li>
+</ul>
+
+<h2>9. Tests</h2>
+<p>62 Vitest tests over the rules that cost money if wrong: the three sample rows reproduce the brief's status text exactly; FIFO allocation, overpayment credit and lateness; instalment splits always summing to the net fee; every refund clause including late joiners, leaving before start, shortfall and GST credit notes; reminder timing, no resend, no burst, stop on payment, no em dashes in templates; risk bands including "unsure" and "too little data", false-flag suppression; matching with IDs written several ways, overpayment and name-only suggestions; GST paise rounding; amount in words; CSV parsing and validation; Tally escaping and formula injection; forged and expired sessions, edited pay links, receipt keys and phone formats. Every screen was also clicked through in a browser at phone and desktop widths, including the full pay-to-receipt path.</p>
+
+<h2>10. What I cut, and what I would do next</h2>
+<div class="grid2">
+<div>
+<h3>Cut or mocked, on purpose</h3>
+<ul>
+  <li>Real gateway, SMS/WhatsApp and bank feed. Each sits behind a seam that matches the real contract.</li>
+  <li>Creating fee plans and students in the UI (they come from the existing fee software; seeded here).</li>
+  <li>Student login. The brief's core roles are parent and accounts.</li>
+  <li>Per-centre staff scoping; everyone on the desk sees all centres, which is what the founder asked for.</li>
+  <li>Rate limiting for staff login beyond bcrypt cost.</li>
+</ul>
+</div>
+<div>
+<h3>Next, in order</h3>
+<ol>
+  <li>Razorpay or Cashfree in place of the mock, using the same webhook handler; WhatsApp Business templates for the reminder text (approved templates need these exact words).</li>
+  <li>Bank statement import (CSV/MT940) feeding the matcher daily.</li>
+  <li>Two-way Tally sync and a month-end close checklist, to get reconciliation from 4 days to 1.</li>
+  <li>Refit the risk model on one term of counsellor outcomes and real withdrawals; report precision and recall per centre.</li>
+  <li>Consent withdrawal and data export for parents; per-centre staff permissions; staff login throttling and 2FA.</li>
+  <li>Measure the brief's targets: parent calls about dues (needs the call log), 60-day late value by term.</li>
+</ol>
+</div>
+</div>
+
+<h2>11. Limits, honestly</h2>
+<ul>
+  <li>Risk weights are judgement, not fitted. Until there is outcome data, precision on the page is the only evidence it works.</li>
+  <li>Ledgers are computed in memory per request. That is fine for thousands of students; at tens of thousands I would cache per-student balances and invalidate on payment.</li>
+  <li>The refund policy wording is mine. The client's lawyer should sign it off before it is published.</li>
+  <li>The demo clock and on-screen OTP exist only in demo mode and must be off (<code>DEMO_MODE=false</code>) for a real launch.</li>
+  <li>Hindi copy was written carefully but should be read by a native speaker at the client before parents see it.</li>
+</ul>
+</body>
+</html>
